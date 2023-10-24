@@ -5,3 +5,6 @@ node_modules/
 
 # Ignorer le fichier package-lock.json
 package-lock.json
+
+# Ignorer le fichier .env
+/xelAPI/.env
