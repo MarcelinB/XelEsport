@@ -1,0 +1,7 @@
+# Ignorer les répertoires node_modules/
+node_modules/
+/xelAPI/node_modules/
+/xelFront/node_modules/
+
+# Ignorer le fichier package-lock.json
+package-lock.json
