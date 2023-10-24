@@ -21,8 +21,6 @@ import { MatchModule } from './matches/match.module';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
-
-
 @Module({
   imports: [TypeOrmModule.forFeature([User]), TypeOrmModule.forRoot({
     type: 'mysql',
