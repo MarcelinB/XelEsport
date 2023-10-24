@@ -3,7 +3,7 @@ node_modules/
 /xelAPI/node_modules/
 /xelFront/node_modules/
 /xelAPI/dist/
-/xelAPI/.env
+./xelAPI/.env
 
 # Ignorer le fichier package-lock.json
 package-lock.json
