@@ -8,16 +8,15 @@ export class MatchController {
   constructor(private readonly matchService: MatchService,
     private readonly testmatchsService: TestMatchesService) {}
 
- /*@Get(':userId')
+ @Get(':userId')
   async getMatchesByUserPreference(@Param('userId') userId: number) {
-    console.log('oui')
       const matches = await this.matchService.getMatchesByUserPreference(userId);
     return matches;
-  }*/
+  }
 
   @Get()
   async getMatches() {
-      const matches = await this.testmatchsService.getTeamMatches('G2 Esports');
+      const matches = await this.testmatchsService.getTeamMatches('Team BDS');
       //console.log(matches);
     return matches;
   }

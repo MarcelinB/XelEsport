@@ -1,11 +1,12 @@
 import { GameService } from "src/services/game.service";
 import { LeagueService } from "src/services/league.service";
 import { TeamService } from "src/services/team.service";
-import { Match } from "./match.entity";
+
 import { PreferenceGameService } from "src/services/preferencegame.service";
 import { Injectable } from "@nestjs/common";
 import { PreferenceLeagueService } from "src/services/preferenceleague.service";
 import { PreferenceTeamService } from "src/services/preferenceteam.service";
+import { CargoClient } from "poro";
 
 @Injectable()
 export class MatchService {
@@ -17,73 +18,72 @@ export class MatchService {
         private preferenceLeagueService: PreferenceLeagueService,
         private preferenceTeamService: PreferenceTeamService,
     ){}
-    async createMatches() {
-        const matches = [];
-        const match1 = {
-            id: 1,
-            date: '2023-07-21',
-            time: '20:00',
-            game: await this.gameService.findById(1),
-            league: await this.leagueService.findById(1),
-            team1: await this.teamService.findById(1),
-            team2: await this.teamService.findById(2),
-            result: null,
-        };
-        matches.push(match1);
-        const match2 = {
-            id: 2,
-            date: '2023-07-21',
-            time: '21:00',
-            game: await this.gameService.findById(1),
-            league: await this.leagueService.findById(2),
-            team1: await this.teamService.findById(9),
-            team2: await this.teamService.findById(10),
-            result: null,
-        };
-        matches.push(match2);
-        const match3 = {
-            id: 3,
-            date: '2023-07-21',
-            time: '21:00',
-            game: await this.gameService.findById(3),
-            league: await this.leagueService.findById(7),
-            team1: await this.teamService.findById(18),
-            team2: await this.teamService.findById(19),
-            result: null,
-        };
-        matches.push(match3);
-        const match4 = {
-            id: 1,
-            date: '2023-07-22',
-            time: '20:00',
-            game: await this.gameService.findById(1),
-            league: await this.leagueService.findById(1),
-            team1: await this.teamService.findById(1),
-            team2: await this.teamService.findById(3),
-            result: null,
-        };
-        matches.push(match4);
-        return matches;
-    }
 
+ // Retrieve matches for a given LeagueOfLegends team within the last three weeks.
+ async getLolTeamMatches(teamName: string) {
+    // Create an instance of the CargoClient.
+    const cargo = new CargoClient();
+
+    // Query the 'Teams' table to find the team by name.
+    const team = await cargo.query({
+      tables: ['Teams'],
+      where: `Teams.Name="${teamName}"`,
+    });
+
+    // Check if the team exists in the 'Teams' table.
+    if (team.data && team.data.length > 0) {
+      // Get the current date.
+      const currentDate = new Date();
+
+      // Calculate the date three weeks before the current date.
+      const threeWeeksBefore = new Date(currentDate);
+      threeWeeksBefore.setDate(currentDate.getDate() - 21);
+
+      // Convert the three weeks before date to ISO format.
+      const threeWeeksBeforeISO = threeWeeksBefore.toISOString();
+
+      // Query the 'MatchSchedule' table to find matches for the specified team
+      // within the last three weeks.
+      const matches = await cargo.query({
+        tables: ['MatchSchedule'],
+        fields: ['MatchSchedule.Team1', 'MatchSchedule.Team2', 'MatchSchedule.DateTime_UTC',
+        'MatchSchedule.Winner', 'MatchSchedule.Team1Score', 'MatchSchedule.Team2Score',
+        'MatchSchedule.BestOf', 'MatchSchedule.ShownName', 'MatchSchedule._ID'],
+        where: `MatchSchedule.DateTime_UTC >= DATE("${threeWeeksBeforeISO}") 
+        AND (MatchSchedule.Team1="${teamName}" OR MatchSchedule.Team2="${teamName}")`,
+        orderBy: [
+          {
+            field: 'MatchSchedule.DateTime_UTC',
+            desc: true,
+          },
+        ],
+      });
+      const matchesObj = matches.data;
+      // Add Lol ID to the matches.
+      matchesObj.forEach(match => {
+        match['gameId'] = 1;
+      });
+      // Return the data for the matches found.
+      return matchesObj;
+    } else {
+      // Throw an error if the team is not found.
+      throw Error("Team not found");
+    }
+  }
     async getMatchesByUserPreference(userId: number): Promise<any> {
         const preferenceGames = await this.preferenceGameService.findAllByUserId(userId);
         const preferenceLeagues = await this.preferenceLeagueService.findAllByUserId(userId);
         const preferenceTeams = await this.preferenceTeamService.findAllByUserId(userId);
-      
-        const matches = await this.createMatches();
-      
-        const filteredMatches = matches.filter((match) => {
-          return (
-            preferenceGames.some((preference) => preference.game.id === match.game.id) &&
-            preferenceLeagues.some((preference) => preference.league.id === match.league.id) &&
-            (preferenceTeams.some((preference) => preference.team.id === match.team1.id) ||
-              preferenceTeams.some((preference) => preference.team.id === match.team2.id))
-          );
-        });
-      
-        return filteredMatches;
-      }
-      
+        
+        // For the moment we only have LeagueOfLegends
+        const allMatches = [];
+        for (const preferenceTeam of preferenceTeams) {
+            const teamName = preferenceTeam.team.name;
+            const match = await this.getLolTeamMatches(teamName);
+            
+            allMatches.push(...match);
+        }
+        return allMatches;
 
+      }
 }
