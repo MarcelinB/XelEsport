@@ -16,10 +16,12 @@ import { PreferenceLeagueService } from 'src/services/preferenceleague.service';
 import { PreferenceTeamService } from 'src/services/preferenceteam.service';
 import { PreferenceLeague } from 'src/entity/preferenceleague.entity';
 import { PreferenceTeam } from 'src/entity/preferenceteam.entity';
+import { TestMatchesService } from './testmatchs.services';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Match, PreferenceGame, PreferenceLeague, PreferenceTeam, Game, League, Team]), PreferenceGameModule],
-  providers: [MatchService, PreferenceGameService, PreferenceLeagueService, PreferenceTeamService, GameService, LeagueService, TeamService],
+  providers: [MatchService, PreferenceGameService, PreferenceLeagueService, PreferenceTeamService,
+    GameService, LeagueService, TeamService, TestMatchesService],
   controllers: [MatchController],
 })
 export class MatchModule {}
