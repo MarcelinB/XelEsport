@@ -32,7 +32,9 @@ export class TestMatchesService {
       // within the last three weeks.
       const matches = await cargo.query({
         tables: ['MatchSchedule'],
-        fields: ['MatchSchedule.Team1', 'MatchSchedule.Team2', 'MatchSchedule.DateTime_UTC'],
+        fields: ['MatchSchedule.Team1', 'MatchSchedule.Team2', 'MatchSchedule.DateTime_UTC',
+        'MatchSchedule.Winner', 'MatchSchedule.Team1Score', 'MatchSchedule.Team2Score',
+        'MatchSchedule.BestOf', 'MatchSchedule.ShownName', 'MatchSchedule._ID'],
         where: `MatchSchedule.DateTime_UTC >= DATE("${threeWeeksBeforeISO}") 
         AND (MatchSchedule.Team1="${teamName}" OR MatchSchedule.Team2="${teamName}")`,
         orderBy: [
