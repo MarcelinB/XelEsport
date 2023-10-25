@@ -21,14 +21,15 @@ import { MatchModule } from './matches/match.module';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
+
 @Module({
   imports: [TypeOrmModule.forFeature([User]), TypeOrmModule.forRoot({
     type: 'mysql',
-    host: 'xel.cauqocgrsena.eu-north-1.rds.amazonaws.com',
+    host: process.env.DB_HOST,
     port: 3306,
-    username: 'xel_admin',
+    username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
-    database: 'xel',
+    database: process.env.DB_NAME,
     entities: ['dist/**/*.entity{.ts,.js}'],
     synchronize: false,
 }), UserModule, GameModule, LeagueModule, TeamModule, PreferenceGameModule, PreferenceLeagueModule, PreferenceTeamModule, AuthModule, JwtModule, MatchModule],
