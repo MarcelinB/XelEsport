@@ -120,7 +120,6 @@ export class LeagueOfLegendMatchService {
       ")";
 
     const teamsMatches = await this.queryMatchesFromCargo(whereClause);
-    console.log(teamsMatches)
     if (teamsMatches && teamsMatches.length > 0) {
       return teamsMatches;
     } else {
