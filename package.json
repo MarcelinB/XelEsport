@@ -4,7 +4,7 @@
     "description": "xel",
     "scripts": {
         "dev": "npm-run-all --parallel api front",
-        "api": "cd xelAPI && npm run start",
+        "api": "cd xelAPI && npm run start:dev",
         "front": "cd xelFront && npm run dev"
       },
     "devDependencies": {
