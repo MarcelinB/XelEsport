@@ -1,7 +1,3 @@
-import { GameService } from "src/services/game.service";
-import { LeagueService } from "src/services/league.service";
-import { TeamService } from "src/services/team.service";
-
 import { PreferenceGameService } from "src/services/preferencegame.service";
 import { Injectable } from "@nestjs/common";
 import { PreferenceLeagueService } from "src/services/preferenceleague.service";
@@ -10,80 +6,131 @@ import { CargoClient } from "poro";
 
 @Injectable()
 export class MatchService {
-    constructor(
-        private gameService: GameService,
-        private leagueService: LeagueService,
-        private teamService: TeamService,
-        private preferenceGameService: PreferenceGameService,
-        private preferenceLeagueService: PreferenceLeagueService,
-        private preferenceTeamService: PreferenceTeamService,
-    ){}
+  constructor(
+    private preferenceGameService: PreferenceGameService,
+    private preferenceLeagueService: PreferenceLeagueService,
+    private preferenceTeamService: PreferenceTeamService,
+  ) {}
 
- // Retrieve matches for a given LeagueOfLegends team within the last three weeks.
- async getLolTeamMatches(teamName: string) {
-    // Create an instance of the CargoClient.
+  /**
+   * Retrieve League of Legends matches based on user preferences.
+   *
+   * @param userId - The ID of the user for whom to retrieve matches.
+   * @returns An array of League of Legends matches based on user preferences.
+   */
+  async getLolMatchesByUserPreference(userId: number): Promise<any> {
+    const preferenceGames = await this.preferenceGameService.findAllByUserId(userId);
+    const preferenceLeagues = await this.preferenceLeagueService.findAllByUserId(userId);
+    const preferenceTeams = await this.preferenceTeamService.findAllByUserId(userId);
+    const allLolMatches = [];
+
+    // Check if the user wants to see all matches from all games.
+    if (preferenceGames.find(preferenceGame => preferenceGame.getAllMatchesFromGame === true)) {
+      const matches = await this.getAllLolmMatches();
+      allLolMatches.push(...matches);
+    } 
+    // Check if the user wants to see all matches from a specific league.
+    else if (preferenceLeagues.find(preferenceLeague => preferenceLeague.getAllMatchesFromLeague === true)) {
+      const matches = await this.getAllLolmMatches();
+      allLolMatches.push(...matches);
+    } 
+    // Get matches based on the user's team preferences.
+    else {
+      const allPrefferedTeams = [];
+      preferenceTeams.forEach(team => {
+        allPrefferedTeams.push(team.team.name);
+      });
+      const matches = await this.getLolTeamsMatches(allPrefferedTeams);
+    }
+
+    return allLolMatches;
+  }
+
+  /**
+   * Query League of Legends matches from Cargo based on a WHERE clause.
+   *
+   * @param whereClause - The WHERE clause for querying matches.
+   * @returns An array of League of Legends matches that match the WHERE clause.
+   */
+  private async queryMatchesFromCargo(whereClause: string) {
     const cargo = new CargoClient();
-
-    // Query the 'Teams' table to find the team by name.
-    const team = await cargo.query({
-      tables: ['Teams'],
-      where: `Teams.Name="${teamName}"`,
+    const matches = await cargo.query({
+      tables: ['MatchSchedule'],
+      fields: [
+        'MatchSchedule.Team1',
+        'MatchSchedule.Team2',
+        'MatchSchedule.DateTime_UTC',
+        'MatchSchedule.Winner',
+        'MatchSchedule.Team1Score',
+        'MatchSchedule.Team2Score',
+        'MatchSchedule.BestOf',
+        'MatchSchedule.ShownName',
+        'MatchSchedule._ID',
+      ],
+      where: whereClause,
+      orderBy: [
+        {
+          field: 'MatchSchedule.DateTime_UTC',
+          desc: true,
+        },
+      ],
     });
 
-    // Check if the team exists in the 'Teams' table.
-    if (team.data && team.data.length > 0) {
-      // Get the current date.
-      const currentDate = new Date();
+    const matchesObj = matches.data;
+    matchesObj.forEach(match => {
+      match['gameId'] = 1;
+    });
 
-      // Calculate the date three weeks before the current date.
-      const threeWeeksBefore = new Date(currentDate);
-      threeWeeksBefore.setDate(currentDate.getDate() - 21);
+    return matchesObj;
+  }
 
-      // Convert the three weeks before date to ISO format.
-      const threeWeeksBeforeISO = threeWeeksBefore.toISOString();
+  /**
+ * Retrieve League of Legends matches for specific teams within the last three weeks.
+ *
+ * @param teamNames - An array of team names for which to retrieve matches.
+ * @returns An array of League of Legends matches for the specified teams.
+ */
+  async getLolTeamsMatches(teamNames: string[]) {
+    if (teamNames.length === 0) {
+      // If the array is empty, return an empty result.
+      return [];
+    }
 
-      // Query the 'MatchSchedule' table to find matches for the specified team
-      // within the last three weeks.
-      const matches = await cargo.query({
-        tables: ['MatchSchedule'],
-        fields: ['MatchSchedule.Team1', 'MatchSchedule.Team2', 'MatchSchedule.DateTime_UTC',
-        'MatchSchedule.Winner', 'MatchSchedule.Team1Score', 'MatchSchedule.Team2Score',
-        'MatchSchedule.BestOf', 'MatchSchedule.ShownName', 'MatchSchedule._ID'],
-        where: `MatchSchedule.DateTime_UTC >= DATE("${threeWeeksBeforeISO}") 
-        AND (MatchSchedule.Team1="${teamName}" OR MatchSchedule.Team2="${teamName}")`,
-        orderBy: [
-          {
-            field: 'MatchSchedule.DateTime_UTC',
-            desc: true,
-          },
-        ],
-      });
-      const matchesObj = matches.data;
-      // Add Lol ID to the matches.
-      matchesObj.forEach(match => {
-        match['gameId'] = 1;
-      });
-      // Return the data for the matches found.
-      return matchesObj;
+    // Construct the WHERE clause for all specified team names.
+    const whereClause = `MatchSchedule.DateTime_UTC >= DATE("${this.getThreeWeeksAgoISO()}") AND (` +
+      teamNames.map(teamName => `MatchSchedule.Team1="${teamName}" OR MatchSchedule.Team2="${teamName}"`).join(" OR ") +
+      ")";
+
+    const teamsMatches = await this.queryMatchesFromCargo(whereClause);
+    console.log(teamsMatches)
+    if (teamsMatches && teamsMatches.length > 0) {
+      return teamsMatches;
     } else {
-      // Throw an error if the team is not found.
-      throw Error("Team not found");
+      throw new Error("No matches found for the specified teams");
     }
   }
-    async getMatchesByUserPreference(userId: number): Promise<any> {
-        const preferenceGames = await this.preferenceGameService.findAllByUserId(userId);
-        const preferenceLeagues = await this.preferenceLeagueService.findAllByUserId(userId);
-        const preferenceTeams = await this.preferenceTeamService.findAllByUserId(userId);
-        
-        // For the moment we only have LeagueOfLegends
-        const allMatches = [];
-        for (const preferenceTeam of preferenceTeams) {
-            const teamName = preferenceTeam.team.name;
-            const match = await this.getLolTeamMatches(teamName);
-            
-            allMatches.push(...match);
-        }
-        return allMatches;
 
-      }
+
+  /**
+   * Retrieve all League of Legends matches within the last three weeks.
+   *
+   * @returns An array of all League of Legends matches within the last three weeks.
+   */
+  async getAllLolmMatches() {
+    return this.queryMatchesFromCargo(
+      `MatchSchedule.DateTime_UTC >= DATE("${this.getThreeWeeksAgoISO()}")`
+    );
+  }
+
+  /**
+   * Get the ISO representation of the date three weeks ago from the current date.
+   *
+   * @returns An ISO date string for three weeks ago from the current date.
+   */
+  private getThreeWeeksAgoISO() {
+    const currentDate = new Date();
+    const threeWeeksBefore = new Date(currentDate);
+    threeWeeksBefore.setDate(currentDate.getDate() - 21);
+    return threeWeeksBefore.toISOString();
+  }
 }

@@ -10,7 +10,7 @@ export class MatchController {
 
  @Get(':userId')
   async getMatchesByUserPreference(@Param('userId') userId: number) {
-      const matches = await this.matchService.getMatchesByUserPreference(userId);
+      const matches = await this.matchService.getLolMatchesByUserPreference(userId);
     return matches;
   }
 
