@@ -5,7 +5,7 @@ import { PreferenceTeamService } from "src/services/preferenceteam.service";
 import { CargoClient } from "poro";
 
 @Injectable()
-export class MatchService {
+export class LeagueOfLegendMatchService {
   constructor(
     private preferenceGameService: PreferenceGameService,
     private preferenceLeagueService: PreferenceLeagueService,
@@ -23,29 +23,47 @@ export class MatchService {
     const preferenceLeagues = await this.preferenceLeagueService.findAllByUserId(userId);
     const preferenceTeams = await this.preferenceTeamService.findAllByUserId(userId);
     const allLolMatches = [];
+    const addedMatchIds = new Set();
 
     // Check if the user wants to see all matches from all games.
-    if (preferenceGames.find(preferenceGame => preferenceGame.getAllMatchesFromGame === true)) {
-      const matches = await this.getAllLolmMatches();
-      allLolMatches.push(...matches);
-    } 
-    // Check if the user wants to see all matches from a specific league.
-    else if (preferenceLeagues.find(preferenceLeague => preferenceLeague.getAllMatchesFromLeague === true)) {
-      const matches = await this.getAllLolmMatches();
-      allLolMatches.push(...matches);
-    } 
-    // Get matches based on the user's team preferences.
-    else {
-      const allPrefferedTeams = [];
-      preferenceTeams.forEach(team => {
-        allPrefferedTeams.push(team.team.name);
-      });
-      const matches = await this.getLolTeamsMatches(allPrefferedTeams);
+  if (preferenceGames.find(preferenceGame => preferenceGame.getAllMatchesFromGame === true)) {
+    const matches = await this.getAllLolmMatches();
+    for (const match of matches) {
+      if (!addedMatchIds.has(match._ID)) { // Vérifiez si le match n'a pas déjà été ajouté.
+        allLolMatches.push(match);
+        addedMatchIds.add(match._ID); // Ajoutez l'ID du match à l'ensemble.
+      }
     }
-
-    return allLolMatches;
+  } 
+  // Check if the user wants to see all matches from a specific league.
+  else if (preferenceLeagues.find(preferenceLeague => preferenceLeague.getAllMatchesFromLeague === true)) {
+    const allPrefferedLeagues = [];
+    preferenceLeagues.forEach(league => {
+      allPrefferedLeagues.push(league.league.name);
+    });
+    const matches = await this.getLolLeaguesMatches(allPrefferedLeagues);
+    for (const match of matches) {
+      if (!addedMatchIds.has(match._ID)) { // Vérifiez si le match n'a pas déjà été ajouté.
+        allLolMatches.push(match);
+        addedMatchIds.add(match._ID); // Ajoutez l'ID du match à l'ensemble.
+      }
+    }
+  } 
+  // Get matches based on the user's team preferences.
+  const allPrefferedTeams = [];
+  preferenceTeams.forEach(team => {
+    allPrefferedTeams.push(team.team.name);
+  });
+  const matches = await this.getLolTeamsMatches(allPrefferedTeams);
+  for (const match of matches) {
+    if (!addedMatchIds.has(match._ID)) { // Vérifiez si le match n'a pas déjà été ajouté.
+      allLolMatches.push(match);
+      addedMatchIds.add(match._ID); // Ajoutez l'ID du match à l'ensemble.
+    }
   }
 
+  return allLolMatches;
+}
   /**
    * Query League of Legends matches from Cargo based on a WHERE clause.
    *
@@ -107,6 +125,30 @@ export class MatchService {
       return teamsMatches;
     } else {
       throw new Error("No matches found for the specified teams");
+    }
+  }
+
+   /**
+ * Retrieve League of Legends matches for specific leagues within the last three weeks.
+ *
+ * @param leaguesNames - An array of team leagues for which to retrieve matches.
+ * @returns An array of League of Legends matches for the specified leagues.
+ */
+   async getLolLeaguesMatches(leaguesNames: string[]) {
+    if (leaguesNames.length === 0) {
+      // If the array is empty, return an empty result.
+      return [];
+    }
+
+    // Construct the WHERE clause for all specified leagues names.
+    const whereClause = `MatchSchedule.DateTime_UTC >= DATE("${this.getThreeWeeksAgoISO()}") AND (` +
+    leaguesNames.map(leagueName => `MatchSchedule.ShownName LIKE "%${leagueName}%"`).join(" OR ") +
+    ")";
+    const leaguesMatches = await this.queryMatchesFromCargo(whereClause);
+    if (leaguesMatches && leaguesMatches.length > 0) {
+      return leaguesMatches;
+    } else {
+      throw new Error("No matches found for the specified leagues");
     }
   }
 

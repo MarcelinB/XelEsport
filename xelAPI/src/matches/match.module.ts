@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { MatchController } from './match.controller';
-import { MatchService } from './match.service';
 import { PreferenceGameService } from 'src/services/preferencegame.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PreferenceGame } from 'src/entity/preferencegame.entity';
@@ -16,12 +15,12 @@ import { PreferenceLeagueService } from 'src/services/preferenceleague.service';
 import { PreferenceTeamService } from 'src/services/preferenceteam.service';
 import { PreferenceLeague } from 'src/entity/preferenceleague.entity';
 import { PreferenceTeam } from 'src/entity/preferenceteam.entity';
-import { TestMatchesService } from './testmatchs.services';
+import { LeagueOfLegendMatchService } from './lolMatch.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Match, PreferenceGame, PreferenceLeague, PreferenceTeam, Game, League, Team]), PreferenceGameModule],
-  providers: [MatchService, PreferenceGameService, PreferenceLeagueService, PreferenceTeamService,
-    GameService, LeagueService, TeamService, TestMatchesService],
+  providers: [LeagueOfLegendMatchService, PreferenceGameService, PreferenceLeagueService, PreferenceTeamService,
+    GameService, LeagueService, TeamService],
   controllers: [MatchController],
 })
 export class MatchModule {}
