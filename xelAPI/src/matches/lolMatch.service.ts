@@ -3,6 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { PreferenceLeagueService } from "src/services/preferenceleague.service";
 import { PreferenceTeamService } from "src/services/preferenceteam.service";
 import { CargoClient } from "poro";
+import { DateService } from "src/services/dates.services";
 
 @Injectable()
 export class LeagueOfLegendMatchService {
@@ -10,6 +11,7 @@ export class LeagueOfLegendMatchService {
     private preferenceGameService: PreferenceGameService,
     private preferenceLeagueService: PreferenceLeagueService,
     private preferenceTeamService: PreferenceTeamService,
+    private dateService: DateService,
   ) {}
 
   /**
@@ -22,48 +24,45 @@ export class LeagueOfLegendMatchService {
     const preferenceGames = await this.preferenceGameService.findAllByUserId(userId);
     const preferenceLeagues = await this.preferenceLeagueService.findAllByUserId(userId);
     const preferenceTeams = await this.preferenceTeamService.findAllByUserId(userId);
-    const allLolMatches = [];
-    const addedMatchIds = new Set();
-
+    const allLolMatches = {};
+    
     // Check if the user wants to see all matches from all games.
-  if (preferenceGames.find(preferenceGame => preferenceGame.getAllMatchesFromGame === true)) {
-    const matches = await this.getAllLolmMatches();
-    for (const match of matches) {
-      if (!addedMatchIds.has(match._ID)) { // Vérifiez si le match n'a pas déjà été ajouté.
-        allLolMatches.push(match);
-        addedMatchIds.add(match._ID); // Ajoutez l'ID du match à l'ensemble.
+    if (preferenceGames.find(preferenceGame => preferenceGame.getAllMatchesFromGame === true)) {
+      const matches = await this.getAllLolmMatchesSincesThreeWeeks();
+      for (const match of matches) {
+        allLolMatches[match._ID] = match;
       }
-    }
-  } 
-  // Check if the user wants to see all matches from a specific league.
-  else if (preferenceLeagues.find(preferenceLeague => preferenceLeague.getAllMatchesFromLeague === true)) {
-    const allPrefferedLeagues = [];
-    preferenceLeagues.forEach(league => {
-      allPrefferedLeagues.push(league.league.name);
-    });
-    const matches = await this.getLolLeaguesMatches(allPrefferedLeagues);
-    for (const match of matches) {
-      if (!addedMatchIds.has(match._ID)) { // Vérifiez si le match n'a pas déjà été ajouté.
-        allLolMatches.push(match);
-        addedMatchIds.add(match._ID); // Ajoutez l'ID du match à l'ensemble.
+      return Object.values(allLolMatches);
+    } else {
+      // Check if the user wants to see all matches from a specific league.
+      if (preferenceLeagues.find(preferenceLeague => preferenceLeague.getAllMatchesFromLeague === true)) {
+        const allPrefferedLeagues = [];
+        preferenceLeagues.forEach(league => {
+          allPrefferedLeagues.push(league.league.name);
+        });
+        const matches = await this.getLolLeaguesMatches(allPrefferedLeagues);
+        for (const match of matches) {
+          if (!allLolMatches[match._ID]) {
+            allLolMatches[match._ID] = match;
+          }
+        }
+      } 
+  
+      // Get matches based on the user's team preferences.
+      const allPrefferedTeams = [];
+      preferenceTeams.forEach(team => {
+        allPrefferedTeams.push(team.team.name);
+      });
+      const matches = await this.getLolMatchesByTeamsNames(allPrefferedTeams);
+      for (const match of matches) {
+        if (!allLolMatches[match._ID]) {
+          allLolMatches[match._ID] = match;
+        }
       }
-    }
-  } 
-  // Get matches based on the user's team preferences.
-  const allPrefferedTeams = [];
-  preferenceTeams.forEach(team => {
-    allPrefferedTeams.push(team.team.name);
-  });
-  const matches = await this.getLolTeamsMatches(allPrefferedTeams);
-  for (const match of matches) {
-    if (!addedMatchIds.has(match._ID)) { // Vérifiez si le match n'a pas déjà été ajouté.
-      allLolMatches.push(match);
-      addedMatchIds.add(match._ID); // Ajoutez l'ID du match à l'ensemble.
+  
+      return Object.values(allLolMatches);
     }
   }
-
-  return allLolMatches;
-}
   /**
    * Query League of Legends matches from Cargo based on a WHERE clause.
    *
@@ -108,14 +107,14 @@ export class LeagueOfLegendMatchService {
  * @param teamNames - An array of team names for which to retrieve matches.
  * @returns An array of League of Legends matches for the specified teams.
  */
-  async getLolTeamsMatches(teamNames: string[]) {
+  async getLolMatchesByTeamsNames(teamNames: string[]) {
     if (teamNames.length === 0) {
       // If the array is empty, return an empty result.
       return [];
     }
 
     // Construct the WHERE clause for all specified team names.
-    const whereClause = `MatchSchedule.DateTime_UTC >= DATE("${this.getThreeWeeksAgoISO()}") AND (` +
+    const whereClause = `MatchSchedule.DateTime_UTC >= DATE("${this.dateService.getThreeWeeksAgoISO()}") AND (` +
       teamNames.map(teamName => `MatchSchedule.Team1="${teamName}" OR MatchSchedule.Team2="${teamName}"`).join(" OR ") +
       ")";
 
@@ -140,7 +139,7 @@ export class LeagueOfLegendMatchService {
     }
 
     // Construct the WHERE clause for all specified leagues names.
-    const whereClause = `MatchSchedule.DateTime_UTC >= DATE("${this.getThreeWeeksAgoISO()}") AND (` +
+    const whereClause = `MatchSchedule.DateTime_UTC >= DATE("${this.dateService.getThreeWeeksAgoISO()}") AND (` +
     leaguesNames.map(leagueName => `MatchSchedule.ShownName LIKE "%${leagueName}%"`).join(" OR ") +
     ")";
     const leaguesMatches = await this.queryMatchesFromCargo(whereClause);
@@ -157,21 +156,10 @@ export class LeagueOfLegendMatchService {
    *
    * @returns An array of all League of Legends matches within the last three weeks.
    */
-  async getAllLolmMatches() {
+  async getAllLolmMatchesSincesThreeWeeks() {
     return this.queryMatchesFromCargo(
-      `MatchSchedule.DateTime_UTC >= DATE("${this.getThreeWeeksAgoISO()}")`
+      `MatchSchedule.DateTime_UTC >= DATE("${this.dateService.getThreeWeeksAgoISO()}")`
     );
   }
 
-  /**
-   * Get the ISO representation of the date three weeks ago from the current date.
-   *
-   * @returns An ISO date string for three weeks ago from the current date.
-   */
-  private getThreeWeeksAgoISO() {
-    const currentDate = new Date();
-    const threeWeeksBefore = new Date(currentDate);
-    threeWeeksBefore.setDate(currentDate.getDate() - 21);
-    return threeWeeksBefore.toISOString();
-  }
 }

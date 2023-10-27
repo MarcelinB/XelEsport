@@ -16,10 +16,11 @@ import { PreferenceTeamService } from 'src/services/preferenceteam.service';
 import { PreferenceLeague } from 'src/entity/preferenceleague.entity';
 import { PreferenceTeam } from 'src/entity/preferenceteam.entity';
 import { LeagueOfLegendMatchService } from './lolMatch.service';
+import { DateService } from 'src/services/dates.services';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Match, PreferenceGame, PreferenceLeague, PreferenceTeam, Game, League, Team]), PreferenceGameModule],
-  providers: [LeagueOfLegendMatchService, PreferenceGameService, PreferenceLeagueService, PreferenceTeamService,
+  providers: [LeagueOfLegendMatchService, DateService,PreferenceGameService, PreferenceLeagueService, PreferenceTeamService,
     GameService, LeagueService, TeamService],
   controllers: [MatchController],
 })
