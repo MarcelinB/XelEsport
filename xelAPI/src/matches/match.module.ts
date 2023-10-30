@@ -17,11 +17,13 @@ import { PreferenceLeague } from 'src/entity/preferenceleague.entity';
 import { PreferenceTeam } from 'src/entity/preferenceteam.entity';
 import { LeagueOfLegendMatchService } from './lolMatch.service';
 import { DateService } from 'src/services/dates.services';
+import { UserService } from 'src/services/user.service';
+import { User } from 'src/entity/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Match, PreferenceGame, PreferenceLeague, PreferenceTeam, Game, League, Team]), PreferenceGameModule],
-  providers: [LeagueOfLegendMatchService, DateService,PreferenceGameService, PreferenceLeagueService, PreferenceTeamService,
-    GameService, LeagueService, TeamService],
+  imports: [TypeOrmModule.forFeature([Match, PreferenceGame, PreferenceLeague, PreferenceTeam, Game, League, Team, User]), PreferenceGameModule],
+  providers: [LeagueOfLegendMatchService, DateService, PreferenceGameService, PreferenceLeagueService, PreferenceTeamService,
+    GameService, LeagueService, TeamService, UserService],
   controllers: [MatchController],
 })
 export class MatchModule {}

@@ -4,6 +4,7 @@ import { PreferenceLeagueService } from "src/services/preferenceleague.service";
 import { PreferenceTeamService } from "src/services/preferenceteam.service";
 import { CargoClient } from "poro";
 import { DateService } from "src/services/dates.services";
+import { User } from "src/entity/user.entity";
 
 @Injectable()
 export class LeagueOfLegendMatchService {
@@ -17,16 +18,15 @@ export class LeagueOfLegendMatchService {
   /**
    * Retrieve League of Legends matches based on user preferences.
    *
-   * @param userId - The ID of the user for whom to retrieve matches.
+   * @param user -A user object.
    * @returns An array of League of Legends matches based on user preferences.
    */
-  async getLolMatchesByUserPreference(userId: number): Promise<any> {
-    const preferenceGames = await this.preferenceGameService.findAllByUserId(userId);
-    const preferenceLeagues = await this.preferenceLeagueService.findAllByUserId(userId);
-    const preferenceTeams = await this.preferenceTeamService.findAllByUserId(userId);
+  async getLolMatchesByUserPreference(user: User): Promise<any> {
+    //Get all the user preferences
+    const { preferenceGames, preferenceLeagues, preferenceTeams } = await this.getUserPreferences(user);
     const allLolMatches = {};
     
-    // Check if the user wants to see all matches from all games.
+    // Check if the user wants to see all matches from the game.
     if (preferenceGames.find(preferenceGame => preferenceGame.getAllMatchesFromGame === true)) {
       const matches = await this.getAllLolmMatchesSincesThreeWeeks();
       for (const match of matches) {
@@ -160,6 +160,24 @@ export class LeagueOfLegendMatchService {
     return this.queryMatchesFromCargo(
       `MatchSchedule.DateTime_UTC >= DATE("${this.dateService.getThreeWeeksAgoISO()}")`
     );
+  }
+
+    /**
+   * Retrieve preferences for a user.
+   * 
+   * @param user A user object.
+   * @returns All the preferences as preferences objects.
+   */
+  async getUserPreferences(user: User){
+    const preferenceGames = await this.preferenceGameService.findAllByUserId(user.id);
+    const preferenceLeagues = await this.preferenceLeagueService.findAllByUserId(user.id);
+    const preferenceTeams = await this.preferenceTeamService.findAllByUserId(user.id);
+
+    return {
+      preferenceGames,
+      preferenceLeagues,
+      preferenceTeams
+    }
   }
 
 }
