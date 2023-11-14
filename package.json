@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "description": "xel",
     "scripts": {
+        "xel install": "npm install && cd xelAPI && npm install && cd ../xelFront && npm install",
         "dev": "npm-run-all --parallel api front",
         "api": "cd xelAPI && npm run start:dev",
         "front": "cd xelFront && npm run dev"
