@@ -12,7 +12,7 @@
 
 ## Environment Variables
 
-To run this project, you will need to create an .env file in the xelAPI andadd the following environment variables to it
+To run this project, you will need to create an .env file in the xelAPI and add the following environment variables to it
 
 
 `DB_PASSWORD=XXXXXXXXX`
