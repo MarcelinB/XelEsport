@@ -5,6 +5,7 @@ import { PreferenceTeamService } from "src/services/preferenceteam.service";
 import { CargoClient } from "poro";
 import { DateService } from "src/services/dates.services";
 import { User } from "src/entity/user.entity";
+import { Match } from "./match.entity";
 
 @Injectable()
 export class LeagueOfLegendMatchService {
@@ -14,6 +15,8 @@ export class LeagueOfLegendMatchService {
     private preferenceTeamService: PreferenceTeamService,
     private dateService: DateService,
   ) {}
+
+  GAME_LEAGUE_OF_LEGEND_ID = 1;
 
   /**
    * Retrieve League of Legends matches based on user preferences.
@@ -30,7 +33,7 @@ export class LeagueOfLegendMatchService {
     if (preferenceGames.find(preferenceGame => preferenceGame.getAllMatchesFromGame === true)) {
       const matches = await this.getAllLolmMatchesSincesThreeWeeks();
       for (const match of matches) {
-        allLolMatches[match._ID] = match;
+        allLolMatches[match.id] = match;
       }
       return Object.values(allLolMatches);
     } else {
@@ -42,8 +45,8 @@ export class LeagueOfLegendMatchService {
         });
         const matches = await this.getLolLeaguesMatches(allPrefferedLeagues);
         for (const match of matches) {
-          if (!allLolMatches[match._ID]) {
-            allLolMatches[match._ID] = match;
+          if (!allLolMatches[match.id]) {
+            allLolMatches[match.id] = match;
           }
         }
       } 
@@ -55,8 +58,8 @@ export class LeagueOfLegendMatchService {
       });
       const matches = await this.getLolMatchesByTeamsNames(allPrefferedTeams);
       for (const match of matches) {
-        if (!allLolMatches[match._ID]) {
-          allLolMatches[match._ID] = match;
+        if (!allLolMatches[match.id]) {
+          allLolMatches[match.id] = match;
         }
       }
   
@@ -95,10 +98,10 @@ export class LeagueOfLegendMatchService {
 
     const matchesObj = matches.data;
     matchesObj.forEach(match => {
-      match['gameId'] = 1;
+      match['gameId'] = this.GAME_LEAGUE_OF_LEGEND_ID;
     });
-
-    return matchesObj;
+    const lolMatches = matchesObj.map(matchData => new Match(matchData));
+    return lolMatches;
   }
 
   /**

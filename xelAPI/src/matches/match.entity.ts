@@ -1,35 +1,25 @@
-import { Game } from "src/entity/game.entity";
-import { League } from "src/entity/league.entity";
-import { Team } from "src/entity/team.entity";
-
-
 export class Match {
-    id: number;
-    date: string;
-    time: string;
-    game: Game;
-    league: League;
-    team1: Team;
-    team2: Team;
-    result: string | null;
-  
-    constructor(
-      id: number,
-      date: string,
-      time: string,
-      game: Game,
-      league: League,
-      team1: Team,
-      team2: Team,
-      result: string | null,
-    ) {
-      this.id = id;
-      this.date = date;
-      this.time = time;
-      this.game = game;
-      this.league = league;
-      this.team1 = team1;
-      this.team2 = team2;
-      this.result = result;
-    }
+  team1: string;
+  team2: string;
+  dateTimeUTC: string;
+  winner: string;
+  team1Score: number;
+  team2Score: number;
+  bestOf: number;
+  shownName: string;
+  id: string;
+  gameId: number;
+
+  constructor(matchData: any) {
+    this.team1 = matchData['Team1'];
+    this.team2 = matchData['Team2'];
+    this.dateTimeUTC = matchData['DateTime_UTC'];
+    this.winner = matchData['Winner'];
+    this.team1Score = matchData['Team1Score'];
+    this.team2Score = matchData['Team2Score'];
+    this.bestOf = matchData['BestOf'];
+    this.shownName = matchData['ShownName'];
+    this.id = matchData['_ID'];
+    this.gameId = matchData['gameId'];
   }
+}
