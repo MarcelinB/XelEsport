@@ -18,18 +18,18 @@
         </div>
         <div v-for="match in filteredMatches" :key="match.id" class="flex w-full mb-4">
           <div class="w-full bg-white rounded-lg shadow-md p-4">
-            <div class="text-lg font-bold mb-2">{{ match.date }}</div>
+            <div class="text-lg font-bold mb-2">{{ match.dateTimeUTC }}</div>
             <div class="text-gray-600 mb-4">
-              <div>{{ match.time }}</div>
-              <div>{{ match.game.name }}</div>
-              <div>{{ match.league.name }}</div>
+              <div>{{ match.dateTimeUTC }}</div>
+              <div>{{ match.gameId }}</div>
+              <div>{{ match.shownName }}</div>
             </div>
             <div class="flex justify-between">
-              <div class="text-blue-500">{{ match.team1.name }}</div>
-              <div class="text-red-500">{{ match.team2.name }}</div>
+              <div class="text-blue-500">{{ match.team1 }}</div>
+              <div class="text-red-500">{{ match.team2 }}</div>
             </div>
             <div class="mt-4 text-center text-gray-600">
-              Résultat: {{ match.result ? match.result : match.time }}
+              Résultat: {{ match.team1Score + "-" + match.team2Score}}
             </div>
           </div>
         </div>
@@ -51,7 +51,7 @@ export default {
     filteredMatches() {
       const today = this.currentDateObj;
       const filteredMatches = this.matchs.filter((match) => {
-        const matchDate = new Date(match.date);
+        const matchDate = new Date(match.dateTimeUTC);
         return matchDate.toDateString() === today.toDateString();
       });
       return filteredMatches;

@@ -1,13 +1,22 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { MatchService } from './match.service';
+import { LeagueOfLegendMatchService } from './lolMatch.service';
+import { UserService } from 'src/services/user.service';
+
+
 
 @Controller('matches')
 export class MatchController {
-  constructor(private readonly matchService: MatchService) {}
+  constructor(
+    private readonly leagueOfLegendMatchService: LeagueOfLegendMatchService,
+    private readonly userService: UserService,
+    ) {}
 
-  @Get(':userId')
+ @Get(':userId')
   async getMatchesByUserPreference(@Param('userId') userId: number) {
-      const matches = await this.matchService.getMatchesByUserPreference(userId);
+      const user = await this.userService.findById(userId);
+      const matches = await this.leagueOfLegendMatchService.getLolMatchesByUserPreference(user);
     return matches;
   }
+
+
 }
