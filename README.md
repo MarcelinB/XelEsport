@@ -1,35 +1,79 @@
+# 🎮 XelEsport
 
-# XelEsport
+**XelEsport** est un agenda qui permet de suivre l'esport en fonction de ses préférences
+---
 
+## 📦 Structure du projet
 
-
-## Installation
-
-
-```bash
-  npm xel install
+```
+XelEsport/
+├── xelAPI     # Back-end (NestJS)
+└── xelFront   # Front-end (Nuxt)
 ```
 
-## Environment Variables
+---
 
-To run this project, you will need to create an .env file in the xelAPI and add the following environment variables to it
+## 🚀 Stack technique
 
+### Back-end : `xelAPI`
+- **Node.js** avec **NestJS**
+- Architecture modulaire
+- REST API
+- Intégration avec une base de données SQL (via .env)
 
-`DB_PASSWORD=XXXXXXXXX`
+### Front-end : `xelFront`
+- **Nuxt** 
+- **Tailwind CSS** 
+- Architecture par composants
 
-`DB_HOST=XXXXXXXXXX`
+### Outils & DevOps
+- **Docker** 
+- **ESLint**, **Prettier** pour la qualité de code
+- **Postman** (`collectionpostman.json`) pour tester les endpoints API
 
-`DB_NAME=XXXXXXX`
+---
 
-`DB_USERNAME=XXXXXXXX`
+## ⚙️ Installation
 
- Then contact me and i will give you access to the db. 
- I will need your IP adress to white list it
-
-## Launch it
-
-You can launch both front and api with 
+### 1. Cloner le dépôt
 
 ```bash
-  npm start dev 
+git clone https://github.com/MarcelinB/XelEsport.git
+cd XelEsport
 ```
+
+### 2. Configurer l’environnement pour l’API
+
+Créer un fichier `.env` dans `xelAPI/` avec les variables suivantes :
+
+```
+DB_HOST=...
+DB_USERNAME=...
+DB_PASSWORD=...
+DB_NAME=...
+```
+
+➡️ Contacte l’auteur pour avoir accès à la base de données (IP à whitelister).
+
+---
+
+## ▶️ Lancer le projet
+
+```bash
+npm run start:dev
+```
+
+Cela démarre à la fois le front et l’API en mode développement.
+
+---
+
+## 🧪 Test de l'API
+
+Utilise `collectionpostman.json` dans Postman pour tester les différents endpoints.
+
+---
+
+
+## 📄 Licence
+
+Ce projet est sous licence MIT.
